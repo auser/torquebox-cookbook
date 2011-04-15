@@ -1,0 +1,6 @@
+default.torquebox.package.version.major = "1"
+default.torquebox.package.version.minor = "0"
+default.torquebox.package.version.incremental = "0.Beta23"
+default.torquebox.package.type = "binary"
+default.torquebox.package.build = "devbuild"
+default.torquebox.package.checksum = "3888eff035c91ef6f257137a0e7a220cbd5bed2d201f3205aa60be98f64bfb95"
