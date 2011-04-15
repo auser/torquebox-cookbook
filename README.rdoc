@@ -13,7 +13,7 @@ The default recipe builds a torquebox server. It builds rvm with jruby-1.6.0. It
 Usage
 =====
 
-Add the recipe `vcap[torquebox]` to your run list and you're good to go!
+Add the recipe `recipe[torquebox]` to your run list and you're good to go!
 
 To allow the torquebox user to login to the server, add the ssh key to the torquebox `attributes/users.rb` file.
 
