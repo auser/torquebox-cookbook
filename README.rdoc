@@ -15,6 +15,8 @@ Usage
 
 Add the recipe `vcap[torquebox]` to your run list and you're good to go!
 
+To allow the torquebox user to login to the server, add the ssh key to the torquebox `attributes/users.rb` file.
+
 License and Author
 ==================
 
