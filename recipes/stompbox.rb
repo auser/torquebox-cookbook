@@ -13,14 +13,14 @@ gem_package "bundler"
 execute "Run bundler with stompbox" do
   cwd stompbox_dir
   command <<-EOE
-  rvm use jruby-1.6.0@stompbox
-  jruby-1.6.0 -S bundle install
+  rvm use #{node[:torquebox][:rvm][:default_ruby]}@stompbox --create
+  #{node[:torquebox][:rvm][:default_ruby]} -S bundle install
 EOE
 end
 
 execute "Deploy backstage" do
   cwd stompbox_dir
   command <<-EOE
-  jruby-1.6.0 -S rake torquebox:deploy:archive
+  #{node[:torquebox][:rvm][:default_ruby]} -S rake torquebox:deploy:archive
 EOE
 end

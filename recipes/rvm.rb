@@ -11,7 +11,9 @@ bash "install RVM" do
   code "bash < <( curl -L http://rvm.beginrescueend.com/releases/rvm-install-head )"
   not_if "which rvm"
 end
-cookbook_file "/etc/profile.d/rvm.sh"
+cookbook_file "/etc/profile.d/rvm.sh" do
+  mode 0755
+end
 
 node[:torquebox][:rvm][:rubies].each do |ruby_version|
   bash "install #{ruby_version} with RVM" do
@@ -27,14 +29,12 @@ bash "make #{node[:torquebox][:rvm][:default_ruby]} the default ruby" do
   not_if "rvm list | grep #{node[:torquebox][:rvm][:default_ruby]} | grep '=>'"
 end
 
-# INSTALL torquebox GEMS
-execute "install torquebox GEMS" do
-  # gem install torquebox torquebox-messaging-container torquebox-naming-container torquebox-capistrano-support torquebox-rake-support torquebox-vfs bundler --pre --no-ri --no-rdoc --source http://rubygems.torquebox.org
+execute "install bundler gem" do
   command <<-EOC
-rvm use jruby-1.6.0@global
+rvm use #{node[:torquebox][:rvm][:default_ruby]}@global
 gem install bundler --no-ri --no-rdoc
   EOC
-  not_if "rvm use jruby-1.6.0@global; gem list | grep torquebox"
+  not_if "rvm use #{node[:torquebox][:rvm][:default_ruby]}@global; gem list | grep bundler"
 end
 
 gem_package "bundler"
