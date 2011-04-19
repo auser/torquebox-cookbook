@@ -63,8 +63,8 @@ when 'binary'
     execute "torquebox-src-unpack" do
       cwd "#{src_dir}"
       command <<-EOC
-unzip -uq #{zip_filename} -d #{unpacked_directory_name}-tmp
 rm -rf #{unpacked_directory_name}
+unzip -uq #{zip_filename} -d #{unpacked_directory_name}-tmp
 mv #{unpacked_directory_name}-tmp/* #{unpacked_directory_name}
 rm -rf #{unpacked_directory_name}-tmp
 chown -R #{node[:torquebox][:user][:uid]}:#{node[:torquebox][:user][:gid]} #{unpacked_directory_name}
@@ -79,7 +79,7 @@ chown -R #{node[:torquebox][:user][:uid]}:#{node[:torquebox][:user][:gid]} #{unp
       group node[:torquebox][:user][:gid]
       mode 0644
       checksum "0bca6b1f6862155175e609852309aaa61955adc275527f9005956d9638695279"
-      notifies :run, resources(:execute => "torquebox-src-unpack")
+      notifies :run, resources(:execute => "torquebox-src-unpack"), :immediately
     end
     
   # Otherwise
@@ -140,22 +140,6 @@ directory "#{current_torque_dir}" do
   recursive true
 end
 
-execute "install bundler gem" do
-  command <<-EOC
-jruby -S gem install bundler
-  EOC
-  not_if "gem list | grep bundler"
-  environment default_environment
-end
-
-execute "install torquebox gems" do
-  command <<-EOC
-jruby -S gem install torquebox --pre --no-ri --no-rdoc --source http://rubygems.torquebox.org
-  EOC
-  not_if "gem list | grep torquebox"
-  environment default_environment
-end
-
 directory "#{node[:torquebox][:user][:home_dir]}/log" do
   owner node[:torquebox][:user][:uid]
   group node[:torquebox][:user][:gid]
@@ -179,6 +163,23 @@ template "#{node[:torquebox][:current_torque_dir]}/jboss/bin/run.conf" do
   owner "root"
   group "root"
   mode "0755"
+end
+
+execute "install bundler gem" do
+  command <<-EOC
+source /etc/environment
+jruby -S gem install bundler
+  EOC
+  not_if "gem list | grep bundler"
+  environment default_environment
+end
+
+execute "install torquebox gems" do
+  command <<-EOC
+jruby -S gem install torquebox --pre --no-ri --no-rdoc --source http://rubygems.torquebox.org
+  EOC
+  not_if "gem list | grep torquebox"
+  environment default_environment
 end
 
 service "jboss" do
