@@ -197,4 +197,6 @@ directory "#{apps_dir}" do
   recursive true
 end
 
+include_recipe "postgresql"
+
 include_recipe "torquebox::apps"
