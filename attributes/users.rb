@@ -1,7 +1,7 @@
 default.torquebox.user = {
-  'uid' => "torquebox",
-  'gid' => 'torquebox',
-  'home_dir' => '/home/torquebox',
+  'uid' => "jboss",
+  'gid' => 'jboss',
+  'home_dir' => '/home/jboss', # Should we do the default of /usr/local/jboss?
   'ssh_keys' => "
   "
 }

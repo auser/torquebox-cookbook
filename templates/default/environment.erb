@@ -1,0 +1,6 @@
+export TORQUEBOX_HOME=<%= node[:torquebox][:current_torque_dir] %>
+export JBOSS_HOME=<%= node[:torquebox][:current_torque_dir] %>/jboss
+export JRUBY_HOME=<%= node[:torquebox][:current_torque_dir] %>/jruby
+export PATH=$JRUBY_HOME/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/var/lib/gems/1.8/bin
+
+export JBOSS_HOST=0.0.0.0

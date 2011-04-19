@@ -28,4 +28,6 @@ fi
 umask 022
 
 export TORQUEBOX_HOME=<%= node[:torquebox][:current_torque_dir] %>
-export JBOSS_HOME=<%= node[:torquebox][:current_torque_dir] %>/jboss
+export JBOSS_HOME=$TORQUEBOX_HOME/jboss
+export JRUBY_HOME=$TORQUEBOX_HOME/jruby
+export PATH=$JRUBY_HOME/bin:$PATH

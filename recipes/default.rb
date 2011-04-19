@@ -10,12 +10,14 @@
 include_recipe "apt"
 include_recipe "git"
 
-template "/etc/.profile" do
+template "/etc/profile" do
   source "profile.erb"
-  owner node[:torquebox][:user][:uid]
-  group node[:torquebox][:user][:gid]
-  mode "0700"
+  owner "root"
+  group "root"
+  mode "0755"
 end
+
+package "unzip"
 
 case node[:platform]
 when "ubuntu","CentOS","RedHat","Fedora"
@@ -28,7 +30,7 @@ end
 
 
 include_recipe "torquebox::users"
-include_recipe "torquebox::rvm"
+# include_recipe "torquebox::rvm"
 
 gem_package "chef"
 
@@ -38,6 +40,8 @@ current_torque_dir  = node[:torquebox][:current_torque_dir]
 src_dir             = node[:torquebox][:src_dir]
 apps_dir            = node[:torquebox][:apps_dir]
 
+default_environment = node[:torquebox][:default_environment]
+  
 # Temporary directory
 directory "#{src_dir}" do
   owner node[:torquebox][:user][:uid]
@@ -55,14 +59,6 @@ when 'binary'
     zip_filename = "torquebox-dev.zip"
     unpacked_directory_name = "torquebox-dev"
     
-    remote_file "#{src_dir}/#{zip_filename}" do
-      source "http://torquebox.org/torquebox-dev.zip"
-      owner node[:torquebox][:user][:uid]
-      group node[:torquebox][:user][:gid]
-      mode 0644
-      checksum "4b3376679b1fabfc996bf9a41eb1ef6967ee765080bfac87dad1ac1a4d3e7e2f"
-    end
-    
     # Because the dev is packed into an odd directory, we have to unpack it here first
     execute "torquebox-src-unpack" do
       cwd "#{src_dir}"
@@ -71,8 +67,19 @@ unzip -uq #{zip_filename} -d #{unpacked_directory_name}-tmp
 rm -rf #{unpacked_directory_name}
 mv #{unpacked_directory_name}-tmp/* #{unpacked_directory_name}
 rm -rf #{unpacked_directory_name}-tmp
-chown -R torquebox:torquebox #{unpacked_directory_name}
+chown -R #{node[:torquebox][:user][:uid]}:#{node[:torquebox][:user][:gid]} #{unpacked_directory_name}
       EOC
+      environment default_environment
+      action :nothing
+    end
+        
+    remote_file "#{src_dir}/#{zip_filename}" do
+      source "http://torquebox.org/torquebox-dev.zip"
+      owner node[:torquebox][:user][:uid]
+      group node[:torquebox][:user][:gid]
+      mode 0644
+      checksum "0bca6b1f6862155175e609852309aaa61955adc275527f9005956d9638695279"
+      notifies :run, resources(:execute => "torquebox-src-unpack")
     end
     
   # Otherwise
@@ -104,7 +111,7 @@ end
 
 execute "chown torquebox" do
   cwd "#{src_dir}"
-  command "chown -R torquebox:torquebox #{unpacked_directory_name}"
+  command "chown -R #{node[:torquebox][:user][:uid]}:#{node[:torquebox][:user][:gid]} #{unpacked_directory_name}"
 end
   
 link "#{current_torque_dir}" do
@@ -112,19 +119,81 @@ link "#{current_torque_dir}" do
   owner node[:torquebox][:user][:uid]
   group node[:torquebox][:user][:gid]
 end
+# Link default directory too
+link "/usr/local/jboss" do
+  to "#{src_dir}/#{unpacked_directory_name}/jboss"
+  owner node[:torquebox][:user][:uid]
+  group node[:torquebox][:user][:gid]
+end
+
+directory "#{apps_dir}" do
+  owner node[:torquebox][:user][:uid]
+  group node[:torquebox][:user][:gid]
+  mode 0755
+end
+
+# Allow us to create a deployment descriptor
+directory "#{current_torque_dir}" do
+  owner node[:torquebox][:user][:uid]
+  group node[:torquebox][:user][:gid]
+  mode 0755
+  recursive true
+end
+
+execute "install bundler gem" do
+  command <<-EOC
+jruby -S gem install bundler
+  EOC
+  not_if "gem list | grep bundler"
+  environment default_environment
+end
+
+execute "install torquebox gems" do
+  command <<-EOC
+jruby -S gem install torquebox --pre --no-ri --no-rdoc --source http://rubygems.torquebox.org
+  EOC
+  not_if "gem list | grep torquebox"
+  environment default_environment
+end
+
+directory "#{node[:torquebox][:user][:home_dir]}/log" do
+  owner node[:torquebox][:user][:uid]
+  group node[:torquebox][:user][:gid]
+end
+
+link "/etc/init.d/jboss" do
+  to "#{current_torque_dir}/jboss/bin/jboss_init_redhat.sh"
+  owner node[:torquebox][:user][:uid]
+  group node[:torquebox][:user][:gid]
+end
+
+template "/etc/environment" do
+  source "environment.erb"
+  owner "root"
+  group "root"
+  mode "0755"
+end
+
+template "#{node[:torquebox][:current_torque_dir]}/jboss/bin/run.conf" do
+  source "run.conf.erb"
+  owner "root"
+  group "root"
+  mode "0755"
+end
+
+service "jboss" do
+  # start_command "/bin/bash #{current_torque_dir}/jboss/bin/run.sh -c default -b 0.0.0.0"
+  # stop_command "/bin/bash #{current_torque_dir}/jboss/bin/shutdown.sh"
+  supports :restart => true
+  action [ :enable, :start ]
+end
+
 
 directory "#{apps_dir}" do
   owner node[:torquebox][:user][:uid]
   group node[:torquebox][:user][:gid]
   mode 0777
+  recursive true
 end
 
-# Allow us to create a deployment descriptor
-directory "#{current_torque_dir}/jboss/server/default/deploy" do
-  owner node[:torquebox][:user][:uid]
-  group node[:torquebox][:user][:gid]
-  mode 0777
-end
-
-include_recipe "torquebox::backstage"
-include_recipe "torquebox::stompbox"
+include_recipe "torquebox::apps"
